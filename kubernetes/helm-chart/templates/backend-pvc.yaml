@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-backend-pvc
+  namespace: {{ .Release.Namespace | default .Values.namespace | default "default" }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.backend.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.size }} 

@@ -1,0 +1,71 @@
+# --------------------------------- BACKEND CONFIGURATION ---------------------------------
+# Cấu hình cho backend service
+backend:
+  # Cấu hình Docker image cho backend
+  image:
+    name: anhtran2611/llm-repo-dockerhub    # Tên image
+    tag: rag-pipeline-0c7dce48945fa99436e18e8bfcd2e6f135a22d1d                # Tag của image
+    pullPolicy: IfNotPresent                # Chính sách pull image
+    pullSecrets:                            # Secret để pull image từ private registry
+      - name: docker-hub-secret
+  port: 8000                                # Port chính của container và service
+  # metricsPort: 8001                         # Port expose metrics cho Prometheus - Bỏ vì metrics dùng chung port chính
+  nodePort: 30082                           # NodePort để expose service ra ngoài
+  replicaCount: 1                           # Số lượng pod replicas
+  service:
+    type: NodePort                          # Loại service (NodePort để expose ra ngoài)
+  # Cấu hình tài nguyên cho pod
+  resources:
+    requests:                               # Tài nguyên tối thiểu cần thiết
+      memory: 3Gi
+      cpu: 1
+    limits:                                 # Giới hạn tài nguyên tối đa
+      memory: 6Gi
+      cpu: 2
+  env:                                      # Biến môi trường
+    OTEL_SDK_DISABLED: "true"              # Tắt OpenTelemetry SDK
+  # Cấu hình persistent storage
+  persistence:
+    enabled: true                           # Bật persistent storage
+    size: 10Gi                              # Kích thước volume
+    storageClass: local-path                # Storage class sử dụng
+    mountPath: /data                        # Đường dẫn mount trong container
+
+# --------------------------------- FRONTEND CONFIGURATION ---------------------------------
+# Cấu hình cho frontend service
+frontend:
+  # Cấu hình Docker image cho frontend
+  image:
+    name: anhtran2611/llm-repo-dockerhub    # Tên image
+    tag: streamlit-app-0c7dce48945fa99436e18e8bfcd2e6f135a22d1d               # Tag của image
+    pullPolicy: IfNotPresent                # Chính sách pull image
+    pullSecrets:                            # Secret để pull image từ private registry
+      - name: docker-hub-secret
+  port: 8501                                # Port của container (Streamlit default port)
+  nodePort: 30083                           # NodePort để expose service ra ngoài
+  service:
+    type: NodePort                          # Loại service (NodePort để expose ra ngoài)
+  # Cấu hình tài nguyên cho pod
+  resources:
+    requests:                               # Tài nguyên tối thiểu cần thiết
+      memory: 256Mi
+      cpu: 0.2
+    limits:                                 # Giới hạn tài nguyên tối đa
+      memory: 512Mi
+      cpu: 1
+  env:                                      # Biến môi trường
+    BACKEND_URL: "http://192.168.3.191:30082"  # URL của backend service
+
+# --------------------------------- INGRESS CONFIGURATION ---------------------------------
+# Cấu hình Ingress controller
+ingress:
+  enabled: false                            # Tắt Ingress controller
+
+# --------------------------------- MONITORING CONFIGURATION ---------------------------------
+# Cấu hình ServiceMonitor cho Prometheus
+serviceMonitor:
+  enabled: true                             # Bật ServiceMonitor
+  interval: 15s                             # Tần suất scrape metrics
+  scrapeTimeout: 10s                        # Timeout cho mỗi lần scrape
+  labels:
+    release: prometheus                     # Label để Prometheus operator nhận diện

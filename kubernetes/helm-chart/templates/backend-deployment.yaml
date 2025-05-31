@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-backend
+  namespace: {{ .Release.Namespace | default .Values.namespace | default "default" }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.backend.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      {{- if .Values.backend.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.backend.image.pullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}-backend
+        image: "{{ .Values.backend.image.name }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        workingDir: /rag-pipeline/src
+        command: ["python", "main.py", "--port", "{{ .Values.backend.port }}", "--model", "Qwen/Qwen2.5-0.5B-Instruct"]
+        ports:
+        - containerPort: {{ .Values.backend.port }}
+          name: http
+        env:
+        - name: OTEL_SDK_DISABLED
+          value: "{{ .Values.backend.env.OTEL_SDK_DISABLED }}"
+        - name: MODEL_PATH
+          value: "/data/models"
+        - name: VECTOR_STORE_PATH
+          value: "/data/vector_store"
+        resources:
+          requests:
+            cpu: {{ .Values.backend.resources.requests.cpu }}
+            memory: {{ .Values.backend.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.backend.resources.limits.cpu }}
+            memory: {{ .Values.backend.resources.limits.memory }}
+        volumeMounts:
+        - name: backend-storage
+          mountPath: /data
+      volumes:
+      - name: backend-storage
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-backend-pvc

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-frontend
+  namespace: {{ .Release.Namespace | default .Values.namespace | default "default" }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-frontend
+    spec:
+      {{- if .Values.frontend.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.frontend.image.pullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}-frontend
+        image: "{{ .Values.frontend.image.name }}:{{ .Values.frontend.image.tag }}"
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.frontend.port }}
+        env:
+        - name: BACKEND_URL
+          value: {{ .Values.frontend.env.BACKEND_URL | quote }}
+        resources:
+          requests:
+            cpu: {{ .Values.frontend.resources.requests.cpu }}
+            memory: {{ .Values.frontend.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.frontend.resources.limits.cpu }}
+            memory: {{ .Values.frontend.resources.limits.memory }}
