@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-jaeger
+  namespace: {{ .Release.Namespace | default .Values.namespace | default "default" }}
+  labels:
+    app: {{ .Chart.Name }}-jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-jaeger
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:1.42
+        ports:
+        - containerPort: 14268
+          name: collector
+        - containerPort: 16686
+          name: query
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m" 

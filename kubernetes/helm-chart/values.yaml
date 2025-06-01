@@ -23,7 +23,8 @@ backend:
       memory: 6Gi
       cpu: 2
   env:                                      # Biến môi trường
-    OTEL_SDK_DISABLED: "true"              # Tắt OpenTelemetry SDK
+    OTEL_SDK_DISABLED: "false"             # Bật OpenTelemetry SDK
+    JAEGER_ENDPOINT: "http://tiny-llm-agent-jaeger-collector:14268/api/traces"  # Endpoint của Jaeger collector
   # Cấu hình persistent storage
   persistence:
     enabled: true                           # Bật persistent storage
@@ -69,3 +70,21 @@ serviceMonitor:
   scrapeTimeout: 10s                        # Timeout cho mỗi lần scrape
   labels:
     release: prometheus                     # Label để Prometheus operator nhận diện
+
+# --------------------------------- JAEGER CONFIGURATION ---------------------------------
+jaeger:
+  enabled: true                             # Bật Jaeger tracing
+  image:
+    repository: jaegertracing/all-in-one
+    tag: "1.42"
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  service:
+    type: NodePort
+    collectorNodePort: 30084
+    queryNodePort: 30085

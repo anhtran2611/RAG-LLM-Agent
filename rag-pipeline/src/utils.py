@@ -19,11 +19,14 @@ set_tracer_provider(
     TracerProvider(resource=Resource.create({SERVICE_NAME: "rag-pipeline-service"}))
 )
 tracer = get_tracer_provider().get_tracer("rag-pipeline", "0.1.0")
-jaeger_exporter = JaegerExporter(
-    collector_endpoint="http://jaeger:14268/api/traces"
-)
-span_processor = BatchSpanProcessor(jaeger_exporter)
-get_tracer_provider().add_span_processor(span_processor)
+
+# Only initialize Jaeger if OpenTelemetry is not disabled
+if os.getenv("OTEL_SDK_DISABLED", "false").lower() != "true":
+    jaeger_exporter = JaegerExporter(
+        collector_endpoint=os.getenv("JAEGER_ENDPOINT", "http://jaeger-collector:14268/api/traces")
+    )
+    span_processor = BatchSpanProcessor(jaeger_exporter)
+    get_tracer_provider().add_span_processor(span_processor)
 
 def get_hardware() -> str:
     """Get hardware available for inference.
